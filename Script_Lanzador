@@ -1,0 +1,117 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Lanzador : MonoBehaviour
+{
+    public float potencia;
+    public float speed;
+    public GameObject prefabProyectil;
+    public Transform puntoRecarga;
+
+    public Transform pos1;
+    public Transform pos2;
+    public GameObject ir;
+    public float a = 10;
+
+    private GameObject aro;
+    private Rigidbody rb;
+    private float deltaTime;
+
+    void Start()
+    {
+        CargarAro();
+    }
+
+    void Update()
+    {
+        Lanzar();
+        Mover();
+        Reset();
+        MovimientoParabolico();
+        InvokeRepeating("Reset", 2, 5);
+    }
+
+    void Mover()
+    {
+        float inputHorizontal = Input.GetAxis("Horizontal");
+        float inputVertical = Input.GetAxis("Vertical");
+
+        if (Input.GetKey(KeyCode.DownArrow))
+        {
+            transform.Rotate(new Vector3(inputVertical, 0) * Time.deltaTime * speed);
+        }
+
+        if (Input.GetKey(KeyCode.UpArrow))
+        {
+            transform.Rotate(new Vector3(inputVertical, 0) * Time.deltaTime * speed);
+        }
+
+        if (Input.GetKey(KeyCode.LeftArrow))
+        {
+            transform.Translate(new Vector3(inputHorizontal, 0) * Time.deltaTime);
+        }
+
+
+        if (Input.GetKey(KeyCode.RightArrow))
+        {
+            transform.Translate(new Vector3(inputHorizontal, 0) * Time.deltaTime);
+        }
+    }
+
+    void Lanzar()
+    {
+        if (Input.GetButtonDown("Jump"))
+        {
+            if (aro != null)
+            {
+                rb.isKinematic = false;
+                rb.AddForce(transform.forward * potencia, ForceMode.Impulse);
+                aro.transform.parent = null;
+                rb = null;
+                aro = null;
+                StartCoroutine(RecargaCorutina());
+            }
+            else
+            {
+                Debug.Log("Sin municion");
+            }
+        }
+    }
+
+    [ContextMenu("CargarAro")]
+    void CargarAro()
+    {
+        aro = Instantiate(prefabProyectil, puntoRecarga.position, puntoRecarga.rotation);
+        aro.transform.parent = transform;
+        rb = aro.GetComponent<Rigidbody>();
+    }
+
+    IEnumerator RecargaCorutina()
+    {
+        yield return new WaitForSeconds(1);
+        CargarAro();
+    }
+
+
+    public void MovimientoParabolico()
+    {
+        a = -Mathf.Abs(a);
+        speed = Mathf.Abs(speed);
+        deltaTime += Time.deltaTime;
+
+        Vector3 vec = (pos2.position - pos1.position).normalized;
+        float dis = Vector3.Distance(pos1.position, pos2.position);
+
+        float x = deltaTime * speed;
+        float y = a * deltaTime * deltaTime - a * (dis / speed) * deltaTime;
+        ir.transform.position = vec * x + Vector3.up * y;
+    }
+
+    void Reset()
+    {
+        deltaTime = 0;
+        ir.transform.position = pos1.position;
+
+    }
+}
